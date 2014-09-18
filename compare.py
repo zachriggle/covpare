@@ -1,13 +1,10 @@
 #!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 
-import argparse
-import os, sys
+import argparse, os, sys, shutil, fileinput, re
 import pymongo # pip install pymongo
-import fileinput
 from pprint import pprint
 from bson.code import Code
-import re
 from itertools import izip
 
 p    = argparse.ArgumentParser()
@@ -15,10 +12,10 @@ p.add_argument('--function-diff', action='store_true')
 p.add_argument('--line-diff', action='store_true')
 p.add_argument('--call-diff', action='store_true')
 
-p.add_argument('--call-scale', default=3, type=float)
+p.add_argument('--scale', default=3, type=float)
 p.add_argument('--file-regex', default=None)
 p.add_argument('--func-regex', default=None)
-p.add_argument('--no-scale', action='store_true')
+p.add_argument('--save', default=None)
 p.add_argument('--ignore-zero', action='store_true')
 p.add_argument('--ignore-same', action='store_true')
 p.add_argument('--only-new', action='store_true')
@@ -64,7 +61,7 @@ def call_diff():
         a_call = fna['calls'] / a_total_calls
         b_call = fnb['calls'] / b_total_calls
 
-        if a_call and (args.call_scale * a_call) < b_call:
+        if a_call and (args.scale * a_call) < b_call:
             print "%s %s" % (b_call/a_call, fna['name'])
 
 def function_diff():
@@ -129,10 +126,18 @@ def line_diff():
     a_functions = a.find(default_query).sort(keys)
     b_functions = b.find(default_query).sort(keys)
 
+    #
+    # If we're saving to a folder, delete everything in it
+    #
+    if args.save:
+        try: shutil.rmtree(args.save)
+        except: pass
+        os.makedirs(args.save)
+
     for a_fn, b_fn in izip(a_functions, b_functions):
         filename = a_fn['filename']
 
-        if not args.no_scale:
+        if 0 == args.scale:
             a_fn = adjust(a_fn)
             b_fn = adjust(b_fn)
 
@@ -172,9 +177,18 @@ def line_diff():
                 stats += '%s%.2g' % (sign, abs(delta))
 
             try:
-                print u'%s:%-4i | %10s | %s ' % (filename, lineno, stats, source.decode('utf-8'))
+                out = u'%s:%-4i | %10s | %s ' % (filename, lineno, stats, source.decode('utf-8'))
             except:
                 print repr((filename, lineno, stats, source))
+
+
+
+            if args.save:
+                with open(os.path.join(args.save, filename),'a') as f:
+                    f.write(out)
+                    f.write('\n')
+            else:
+                print out
 
 if args.line_diff:      line_diff()
 if args.function_diff:  function_diff()
