@@ -135,9 +135,12 @@ def line_diff():
         os.makedirs(args.save)
 
     for a_fn, b_fn in izip(a_functions, b_functions):
+        if not a['calls'] and not b['calls']:
+            continue
+
         filename = a_fn['filename']
 
-        if 0 == args.scale:
+        if 0 != args.scale:
             a_fn = adjust(a_fn)
             b_fn = adjust(b_fn)
 
@@ -147,10 +150,13 @@ def line_diff():
             continue
 
         # Sanity check
+        if 'softmmu_template.h' in (a_fn['filename'], b_fn['filename']):
+            continue
         if a_fn['name'] != b_fn['name']:
             pprint(a_fn)
             pprint(b_fn)
-            raise Exception("Mismatch, should not happen!")
+            # raise Exception("Mismatch, should not happen!")
+            continue
 
         a_lines = a_fn['lines']
         b_lines = b_fn['lines']
@@ -167,14 +173,11 @@ def line_diff():
 
             if args.only_new and al['hits'] != 0:
                 continue
-            if args.ignore_zero and delta == 0:
+            if args.ignore_same and al['hits'] == bl['hits']:
                 continue
 
-            stats = "%.2g" % (al['hits'])
-
-            if delta != 0:
-                sign  = '+' if delta < 0 else '-'
-                stats += '%s%.2g' % (sign, abs(delta))
+            # stats = "%.2g%+.2g" % (al['hits'], bl['hits'] - al['hits'])
+            stats = "%i %i" % (al['hits'], bl['hits'])
 
             try:
                 out = u'%s:%-4i | %10s | %s ' % (filename, lineno, stats, source.decode('utf-8'))
