@@ -19,12 +19,13 @@ p.add_argument('--save', default=None)
 p.add_argument('--ignore-zero', action='store_true')
 p.add_argument('--ignore-same', action='store_true')
 p.add_argument('--only-new', action='store_true')
+p.add_argument('--scale-total', action='store_true')
 
 p.add_argument('a')
 p.add_argument('b')
 args = p.parse_args()
 
-print args
+# print args
 
 default_query = {}
 
@@ -48,8 +49,11 @@ def total_calls(c):
 
 
 def call_diff():
-    a_total_calls = total_calls(a)
-    b_total_calls = total_calls(b)
+    if args.scale_total:
+        a_total_calls = total_calls(a)
+        b_total_calls = total_calls(b)
+        call_scale    = (a_total_calls/b_total_calls)
+    print call_scale
 
     a.ensure_index('name')
     b.ensure_index('name')
@@ -58,11 +62,15 @@ def call_diff():
     b_cur = b.find(default_query).sort('name')
 
     for fna, fnb in izip(a_cur, b_cur):
-        a_call = fna['calls'] / a_total_calls
-        b_call = fnb['calls'] / b_total_calls
+        a_call = fna['calls']
+        b_call = fnb['calls']
 
-        if a_call and (args.scale * a_call) < b_call:
-            print "%s %s" % (b_call/a_call, fna['name'])
+        if args.scale_total:
+            b_call *= call_scale
+
+        # if a_call and (args.scale * a_call) < b_call:
+        if (args.scale * a_call) < b_call:
+            print "%s %s %s" % (a_call, b_call, fna['name'])
 
 def function_diff():
     # For each function that was called in both runs, collate info
