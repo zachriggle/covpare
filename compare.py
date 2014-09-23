@@ -8,21 +8,66 @@ from bson.code import Code
 from itertools import izip
 
 p    = argparse.ArgumentParser()
-p.add_argument('--function-diff', action='store_true')
-p.add_argument('--line-diff', action='store_true')
-p.add_argument('--call-diff', action='store_true')
 
-p.add_argument('--scale', default=3, type=float)
-p.add_argument('--file-regex', default=None)
-p.add_argument('--func-regex', default=None)
-p.add_argument('--save', default=None)
-p.add_argument('--ignore-zero', action='store_true')
-p.add_argument('--ignore-same', action='store_true')
-p.add_argument('--only-new', action='store_true')
-p.add_argument('--scale-total', action='store_true')
+g=p.add_argument_group('Output Options')
+g.add_argument('--function-diff', action='store_true', help=
+    '''
+    Compare the changes between the number of times a function was *invoked*,
+    as a percentage delta from the left-hand side.
+    ''')
+g.add_argument('--line-diff', action='store_true', help=
+    '''
+    Compare the changes between the number of times individual lines were run.
+    Emitted in a format similar to the original GCOV data.
+    ''')
+g.add_argument('--call-diff', action='store_true', help=
+    '''
+    Compare the changes between the number of times a function was *invoked*,
+    in absolute numbers, optionally scaled to the same total number of calls.
+    ''')
+g.add_argument('--save', default=None, help=
+    '''
+    Save per-file output into this directory.  Does not preserve path/heirarchy.
+    ''')
 
-p.add_argument('a')
-p.add_argument('b')
+g=p.add_argument_group('Modifiers')
+g.add_argument('--scale', default=3, type=float, help=
+    '''
+    When comparing left and right, adjust the comparison by this scale.
+    For example, scale=3 would only show functions invoked 3x as many
+    times on the right hand side for --call-diff.
+    ''')
+g.add_argument('--scale-total', action='store_true', help=
+    '''
+    For --call-diff only, adjust all call counts so that the total number
+    of calls on the left side and right side are the same.  Useful for
+    when one run was appreciably longer than the other.
+    ''')
+
+g=p.add_argument_group('Filters')
+g.add_argument('--file-regex', default=None, help=
+    '''
+    Only consider coverage data from files matching this regular expression
+    ''')
+g.add_argument('--func-regex', default=None, help=
+    '''
+    Only consider coverage data from functions matching this regular expression
+    ''')
+g.add_argument('--ignore-zero', action='store_true', help=
+    '''
+    Ignore lines/functions that were never hit.
+    ''')
+g.add_argument('--ignore-same', action='store_true', help=
+    '''
+    Ignore lines/functions that were hit the same quantity on the left and right side.
+    ''')
+g.add_argument('--only-new', action='store_true', help=
+    '''
+    Ignore lines/functions unless they were *only* hit on the right side.
+    ''')
+
+p.add_argument('a', metavar='LEFT')
+p.add_argument('b', metavar='RIGHT')
 args = p.parse_args()
 
 # print args
@@ -49,11 +94,11 @@ def total_calls(c):
 
 
 def call_diff():
+    call_scale = 1
     if args.scale_total:
         a_total_calls = total_calls(a)
         b_total_calls = total_calls(b)
         call_scale    = (a_total_calls/b_total_calls)
-    print call_scale
 
     a.ensure_index('name')
     b.ensure_index('name')
