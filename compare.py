@@ -34,7 +34,9 @@ g.add_argument('--scale', default=3, type=float, help=
     '''
     When comparing left and right, adjust the comparison by this scale.
     For example, scale=3 would only show functions invoked 3x as many
-    times on the right hand side for --call-diff.
+    times on the right hand side for --call-diff.  For --line-diff, it
+    will only show functions which contain lines that were executed 3x
+    as many times.
     ''')
 g.add_argument('--scale-total', action='store_true', help=
     '''

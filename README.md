@@ -92,6 +92,7 @@ These examples were taken from the provided test binary.
 In the test binary, `greet` has 100% more coverage in the second, right-hand run.  Main has 12% better coverage.
 
 ```
+// $ python compare.py left right --function-diff
 +100% right: greet(char*)
 +12% right: main [1 75%] [1:87%]
 ```
@@ -101,6 +102,7 @@ In the test binary, `greet` has 100% more coverage in the second, right-hand run
 In the test binary, `greet` is called zero times on the left-hand-side, and twice on the right-hand side.
 
 ```
+// $ python compare.py left right --call-diff
 0 2 greet(char*)
 ```
 
@@ -109,6 +111,7 @@ In the test binary, `greet` is called zero times on the left-hand-side, and twic
 Here we can see the specific lines that are executed, and their coverage data.  The second column contains the number of times each line was hit.  For example, the `for` line was only executed once in the first run, but three times in the third run.  Likewise, the `Hello world` printf is never executed in the second run.
 
 ```c
+// $ python compare.py left right --line-diff
 hello.cc:4    |        1 1 | void* x = malloc(30); 
 hello.cc:5    |        0 0 |  
 hello.cc:6    |        0 0 | void greet(char* name) 
