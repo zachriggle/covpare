@@ -12,8 +12,7 @@ p    = argparse.ArgumentParser()
 g=p.add_argument_group('Output Options')
 g.add_argument('--function-diff', action='store_true', help=
     '''
-    Compare the changes between the number of times a function was *invoked*,
-    as a percentage delta from the left-hand side.
+    Compare the changes between function-level block coverage, as reported by gcov.
     ''')
 g.add_argument('--line-diff', action='store_true', help=
     '''
